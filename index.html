@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanımın Alışveriş Listesi</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { color: #333; text-align: center; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
+        button#add-btn { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        ul { list-style: none; padding: 0; }
+        li { background: #fff; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; padding: 10px 5px; align-items: center; }
+        li.checked { text-decoration: line-through; color: #888; }
+        .delete-btn { color: #ff5e5e; cursor: pointer; font-weight: bold; border: none; background: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Sepetim 🛒</h2>
+    <div class="input-group">
+        <input type="text" id="item-input" placeholder="Ürün adı yazın...">
+        <button id="add-btn">Ekle</button>
+    </div>
+    <ul id="shopping-list"></ul>
+</div>
+
+<script>
+    const input = document.getElementById('item-input');
+    const btn = document.getElementById('add-btn');
+    const list = document.getElementById('shopping-list');
+
+    // Verileri LocalStorage'dan yükle
+    let items = JSON.parse(localStorage.getItem('myList')) || [];
+
+    function renderList() {
+        list.innerHTML = '';
+        items.forEach((item, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span onclick="toggleItem(${index})" style="cursor:pointer">${item.text}</span>
+                <button class="delete-btn" onclick="removeItem(${index})">Sil</button>
+            `;
+            if (item.checked) li.classList.add('checked');
+            list.appendChild(li);
+        });
+        localStorage.setItem('myList', JSON.stringify(items));
+    }
+
+    btn.onclick = () => {
+        if (input.value.trim()) {
+            items.push({ text: input.value, checked: false });
+            input.value = '';
+            renderList();
+        }
+    };
+
+    window.toggleItem = (index) => {
+        items[index].checked = !items[index].checked;
+        renderList();
+    };
+
+    window.removeItem = (index) => {
+        items.splice(index, 1);
+        renderList();
+    };
+
+    renderList();
+</script>
+
+</body>
+</html>
