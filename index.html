@@ -3,75 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akıllı Market Listem</title>
     <link rel="manifest" href="manifest.json">
-    <title>Hanımın Alışveriş Listesi</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4CAF50">
     <style>
-        body { font-family: sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
-        h2 { color: #333; text-align: center; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
-        button#add-btn { padding: 10px 15px; background: #4CAF50; color: white; border: none; border-radius: 6px; cursor: pointer; }
-        ul { list-style: none; padding: 0; }
-        li { background: #fff; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; padding: 10px 5px; align-items: center; }
-        li.checked { text-decoration: line-through; color: #888; }
-        .delete-btn { color: #ff5e5e; cursor: pointer; font-weight: bold; border: none; background: none; }
+        :root { --primary: #ff8000; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .app-card { background: white; width: 100%; max-width: 450px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 20px; }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+        
+        .selector-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        select, input { flex: 1; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 16px; }
+        button#add-btn { background: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .price-tag { font-weight: bold; color: #2ecc71; }
+        .total-area { margin-top: 20px; padding-top: 20px; border-top: 3px dashed #eee; text-align: right; font-size: 1.2rem; }
+        .delete-btn { color: #e74c3c; cursor: pointer; border: none; background: none; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Sepetim 🛒</h2>
-    <div class="input-group">
-        <input type="text" id="item-input" placeholder="Ürün adı yazın...">
+<div class="app-card">
+    <h2>Market Sepetim 🛒</h2>
+
+    <div class="selector-group">
+        <select id="product-select">
+            <option value="" disabled selected>Ürün Seçin...</option>
+            <optgroup label="Temel Gıda">
+                <option value="Süt" data-price="35.50">Süt (1L)</option>
+                <option value="Ekmek" data-price="10.00">Ekmek</option>
+                <option value="Yumurta" data-price="95.00">Yumurta (30'lu)</option>
+            </optgroup>
+            <optgroup label="Manav">
+                <option value="Domates" data-price="25.00">Domates (Kg)</option>
+                <option value="Muz" data-price="60.00">Muz (Kg)</option>
+            </optgroup>
+        </select>
         <button id="add-btn">Ekle</button>
     </div>
-    <ul id="shopping-list"></ul>
+
+    <ul id="shopping-list" style="padding:0"></ul>
+
+    <div class="total-area">
+        <strong>Toplam: <span id="total-price">0.00</span> TL</strong>
+    </div>
 </div>
 
 <script>
-    const input = document.getElementById('item-input');
+    const select = document.getElementById('product-select');
     const btn = document.getElementById('add-btn');
     const list = document.getElementById('shopping-list');
+    const totalDisplay = document.getElementById('total-price');
 
-    // Verileri LocalStorage'dan yükle
-    let items = JSON.parse(localStorage.getItem('myList')) || [];
+    let basket = JSON.parse(localStorage.getItem('basket')) || [];
 
-    function renderList() {
+    function updateUI() {
         list.innerHTML = '';
-        items.forEach((item, index) => {
+        let total = 0;
+        
+        basket.forEach((item, index) => {
+            total += parseFloat(item.price);
             const li = document.createElement('li');
+            li.className = 'list-item';
             li.innerHTML = `
-                <span onclick="toggleItem(${index})" style="cursor:pointer">${item.text}</span>
-                <button class="delete-btn" onclick="removeItem(${index})">Sil</button>
+                <span>${item.name}</span>
+                <div>
+                    <span class="price-tag">${item.price} TL</span>
+                    <button class="delete-btn" onclick="removeItem(${index})">×</button>
+                </div>
             `;
-            if (item.checked) li.classList.add('checked');
             list.appendChild(li);
         });
-        localStorage.setItem('myList', JSON.stringify(items));
+
+        totalDisplay.innerText = total.toFixed(2);
+        localStorage.setItem('basket', JSON.stringify(basket));
     }
 
     btn.onclick = () => {
-        if (input.value.trim()) {
-            items.push({ text: input.value, checked: false });
-            input.value = '';
-            renderList();
+        const selectedOption = select.options[select.selectedIndex];
+        if (select.value) {
+            basket.push({
+                name: selectedOption.value,
+                price: selectedOption.getAttribute('data-price')
+            });
+            updateUI();
         }
     };
 
-    window.toggleItem = (index) => {
-        items[index].checked = !items[index].checked;
-        renderList();
-    };
-
     window.removeItem = (index) => {
-        items.splice(index, 1);
-        renderList();
+        basket.splice(index, 1);
+        updateUI();
     };
 
-    renderList();
+    updateUI();
 </script>
 
 </body>
